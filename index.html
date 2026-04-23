@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>世界读书日探秘之旅</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            padding: 30px 0;
+            animation: fadeInDown 1s ease;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .game-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: fadeInUp 0.8s ease;
+            display: none;
+        }
+
+        .game-card.active {
+            display: block;
+        }
+
+        .level-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        .question {
+            font-size: 1.3em;
+            margin: 20px 0;
+            line-height: 1.6;
+            color: #2c3e50;
+        }
+
+        .options {
+            display: grid;
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .option-btn {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            padding: 15px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .option-btn:hover {
+            background: #e3f2fd;
+            border-color: #667eea;
+            transform: translateX(5px);
+        }
+
+        .option-btn.correct {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .option-btn.wrong {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
+        .option-btn.disabled {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .feedback {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            display: none;
+            animation: slideIn 0.5s ease;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.correct {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+
+        .feedback.wrong {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+
+        .feedback.info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+
+        .next-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: transform 0.3s ease;
+            display: none;
+        }
+
+        .next-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .next-btn.show {
+            display: inline-block;
+        }
+
+        .progress-bar {
+            background: #e9ecef;
+            height: 8px;
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 4px;
+        }
+
+        /* ========== 得分板样式（电脑端默认） ========== */
+        .score-board {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 100;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .timeline {
+            display: flex;
+            justify-content: space-between;
+            margin: 30px 0;
+            position: relative;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 10%;
+            right: 10%;
+            height: 4px;
+            background: #e9ecef;
+            z-index: 0;
+        }
+
+        .timeline-item {
+            text-align: center;
+            z-index: 1;
+            background: white;
+            padding: 0 10px;
+        }
+
+        .timeline-dot {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-item.active .timeline-dot {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: scale(1.2);
+        }
+
+        .timeline-item.completed .timeline-dot {
+            background: #28a745;
+            color: white;
+        }
+
+        .drag-container {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .drag-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            cursor: move;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .drag-item:active {
+            cursor: grabbing;
+            transform: scale(1.1);
+        }
+
+        .drop-zone {
+            min-height: 60px;
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .drop-zone.filled {
+            border-style: solid;
+            background: #e3f2fd;
+        }
+
+        .match-game {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .match-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .match-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .match-item:hover {
+            border-color: #667eea;
+            background: #e3f2fd;
+        }
+
+        .match-item.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .match-item.matched {
+            background: #d4edda;
+            border-color: #28a745;
+            pointer-events: none;
+        }
+
+        .celebration {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .celebration.show {
+            display: block;
+            animation: bounceIn 1s ease;
+        }
+
+        .trophy {
+            font-size: 5em;
+            margin: 20px;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .start-screen {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+        }
+
+        .start-btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 15px 50px;
+            border-radius: 30px;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .hint-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 10px 10px 0;
+            font-size: 0.95em;
+        }
+
+        .calendar-visual {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .calendar-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+        }
+
+        .calendar-card.highlight {
+            border-color: #667eea;
+            background: #e3f2fd;
+        }
+
+        .date-big {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        /* ========== 手机端适配：得分板改为顶部通栏 ========== */
+        @media (max-width: 600px) {
+            .score-board {
+                top: 0;
+                left: 0;
+                right: 0;
+                border-radius: 0;
+                padding: 10px 20px;
+                text-align: center;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            
+            body {
+                padding-top: 50px;
+            }
+            
+            .header h1 { 
+                font-size: 1.8em; 
+            }
+            
+            .match-game { 
+                grid-template-columns: 1fr; 
+            }
+            
+            .calendar-visual { 
+                grid-template-columns: 1fr; 
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="score-board">
+        ⭐ 得分: <span id="score">0</span>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>📚 世界读书日探秘之旅</h1>
+            <p>穿越400年，解开文豪与历法的秘密</p>
+        </div>
+
+        <!-- 开始界面 -->
+        <div class="game-card active" id="start-screen">
+            <div class="start-screen">
+                <h2 style="color: #667eea; margin-bottom: 20px;">欢迎来到知识探险！</h2>
+                <p style="font-size: 1.2em; color: #555; line-height: 1.8;">
+                    你将通过三个关卡，了解：<br>
+                    🌍 世界读书日的真实来历<br>
+                    📅 塞万提斯与莎士比亚的"同日死"之谜<br>
+                    🎭 汤显祖与三大文豪的时空交汇<br>
+                    📖 中国《全民阅读促进条例》的新规定
+                </p>
+                <button class="start-btn" onclick="startGame()">🚀 开始探险</button>
+            </div>
+        </div>
+
+        <!-- 进度条 -->
+        <div class="game-card" id="progress-card">
+            <div class="timeline">
+                <div class="timeline-item active" id="step1">
+                    <div class="timeline-dot">1</div>
+                    <div>历法探秘</div>
+                </div>
+                <div class="timeline-item" id="step2">
+                    <div class="timeline-dot">2</div>
+                    <div>文豪连线</div>
+                </div>
+                <div class="timeline-item" id="step3">
+                    <div class="timeline-dot">3</div>
+                    <div>法规闯关</div>
+                </div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <!-- 关卡1：历法探秘 -->
+        <div class="game-card" id="level1">
+            <span class="level-badge">🔍 第一关：历法探秘</span>
+            
+            <div class="question">
+                1616年4月23日，西班牙作家塞万提斯去世。同一天，英国剧作家莎士比亚也去世了。但真相是——他们其实<span style="color:#e74c3c; font-weight:bold;">不是同一天</span>死的！为什么？
+            </div>
+
+            <div class="hint-box">
+                💡 提示：1582年，教皇格里高利十三世改革了历法，把当年的10月5日直接改为10月15日，以消除旧历法的误差。西班牙当年就采用了新历法，但英国直到1752年才接受这个新历法！
+            </div>
+
+            <div class="calendar-visual">
+                <div class="calendar-card highlight">
+                    <div>🇪🇸 西班牙</div>
+                    <div class="date-big">4月23日</div>
+                    <div style="font-size:0.9em; color:#666;">格里高利历（新历）</div>
+                </div>
+                <div class="calendar-card">
+                    <div style="font-size:2em;">➡️</div>
+                    <div style="font-weight:bold; color:#e74c3c;">相差10天！</div>
+                </div>
+                <div class="calendar-card">
+                    <div>🇬🇧 英国</div>
+                    <div class="date-big">4月23日</div>
+                    <div style="font-size:0.9em; color:#666;">儒略历（旧历）</div>
+                </div>
+            </div>
+
+            <div class="question">
+                莎士比亚的4月23日（儒略历），换算成今天的公历应该是哪一天？
+            </div>
+
+            <div class="options">
+                <button class="option-btn" onclick="checkAnswer(this, false, 'A')">
+                    <span>A.</span> 还是4月23日，他们确实是同一天死的
+                </button>
+                <button class="option-btn" onclick="checkAnswer(this, true, 'B')">
+                    <span>B.</span> 5月3日，因为英国用的旧历比新历慢了10天
+                </button>
+                <button class="option-btn" onclick="checkAnswer(this, false, 'C')">
+                    <span>C.</span> 4月13日，因为英国用的旧历比新历快了10天
+                </button>
+                <button class="option-btn" onclick="checkAnswer(this, false, 'D')">
+                    <span>D.</span> 4月30日，相差正好一周
+                </button>
+            </div>
+
+            <div class="feedback" id="feedback1">
+                <strong>🎉 答对了！</strong><br>
+                西班牙在1582年就采用了格里高利历（新历），而英国直到1752年才改历。所以莎士比亚的4月23日（儒略历）实际上是今天的<span style="color:#e74c3c; font-weight:bold;">5月3日</span>！<br><br>
+                更有趣的是，塞万提斯可能也不是4月23日死的——官方记录显示他是4月23日下葬的，人不可能当天死当天埋，他可能前一天（4月22日）就去世了！
+            </div>
+
+            <button class="next-btn" id="next1" onclick="goToLevel2()">下一关 ➡️</button>
+        </div>
+
+        <!-- 关卡2：文豪连线 -->
+        <div class="game-card" id="level2">
+            <span class="level-badge">🎭 第二关：文豪时空连线</span>
+            
+            <div class="question">
+                1616年，三位世界级文豪相继离世。请把每位文豪与他的国籍和代表作正确连线！
+            </div>
+
+            <div class="hint-box">
+                💡 提示：这三位是塞万提斯（西班牙）、莎士比亚（英国）、汤显祖（中国）
+            </div>
+
+            <div class="match-game">
+                <div class="match-column" id="left-column">
+                    <div class="match-item" data-id="cervantes" onclick="selectLeft(this)">
+                        👤 塞万提斯
+                    </div>
+                    <div class="match-item" data-id="shakespeare" onclick="selectLeft(this)">
+                        👤 莎士比亚
+                    </div>
+                    <div class="match-item" data-id="tang" onclick="selectLeft(this)">
+                        👤 汤显祖
+                    </div>
+                </div>
+                <div class="match-column" id="right-column">
+                    <div class="match-item" data-match="tang" onclick="selectRight(this)">
+                        🇨🇳 中国《牡丹亭》
+                    </div>
+                    <div class="match-item" data-match="shakespeare" onclick="selectRight(this)">
+                        🇬🇧 英国《哈姆雷特》
+                    </div>
+                    <div class="match-item" data-match="cervantes" onclick="selectRight(this)">
+                        🇪🇸 西班牙《堂吉诃德》
+                    </div>
+                </div>
+            </div>
+
+            <div class="feedback info" id="match-feedback">
+                点击左边的人物，再点击右边的对应信息，完成连线！
+            </div>
+
+            <div class="question" style="margin-top:30px;">
+                汤显祖去世的时间是？
+            </div>
+
+            <div class="options">
+                <button class="option-btn" onclick="checkAnswer2(this, false, 'A')">
+                    <span>A.</span> 1616年4月23日，和塞万提斯、莎士比亚同一天
+                </button>
+                <button class="option-btn" onclick="checkAnswer2(this, true, 'B')">
+                    <span>B.</span> 1616年7月29日（农历），同年但不同月
+                </button>
+                <button class="option-btn" onclick="checkAnswer2(this, false, 'C')">
+                    <span>C.</span> 1615年，比那两位早一年
+                </button>
+                <button class="option-btn" onclick="checkAnswer2(this, false, 'D')">
+                    <span>D.</span> 1617年，比那两位晚一年
+                </button>
+            </div>
+
+            <div class="feedback" id="feedback2">
+                <strong>🎉 完全正确！</strong><br>
+                汤显祖于1616年7月29日（农历）去世，与塞万提斯、莎士比亚<span style="color:#e74c3c; font-weight:bold;">同年但不同月</span>。<br><br>
+                中国当时使用农历，与欧洲的历法体系完全不同。所以"1616年三大文豪同年离世"是一个美丽的文化巧合！
+            </div>
+
+            <button class="next-btn" id="next2" onclick="goToLevel3()">下一关 ➡️</button>
+        </div>
+
+        <!-- 关卡3：法规闯关 -->
+        <div class="game-card" id="level3">
+            <span class="level-badge">📖 第三关：法规知识闯关</span>
+            
+            <div class="question">
+                2025年12月，国务院公布了《全民阅读促进条例》，自2026年2月1日起施行。根据条例规定，每年的"全民阅读活动周"是哪一周？
+            </div>
+
+            <div class="options">
+                <button class="option-btn" onclick="checkAnswer3(this, false, 'A')">
+                    <span>A.</span> 每年4月23日所在的那一周
+                </button>
+                <button class="option-btn" onclick="checkAnswer3(this, true, 'B')">
+                    <span>B.</span> 每年4月第四周
+                </button>
+                <button class="option-btn" onclick="checkAnswer3(this, false, 'C')">
+                    <span>C.</span> 每年4月第一周
+                </button>
+                <button class="option-btn" onclick="checkAnswer3(this, false, 'D')">
+                    <span>D.</span> 每年9月第一周
+                </button>
+            </div>
+
+            <div class="feedback" id="feedback3-1">
+                <strong>🎉 答对了！</strong><br>
+                《全民阅读促进条例》明确规定：每年<span style="color:#e74c3c; font-weight:bold;">4月第四周</span>为全民阅读活动周！<br><br>
+                2026年4月20日至26日是我国首个全民阅读活动周，各地都举办了丰富多彩的阅读活动。
+            </div>
+
+            <div class="question" style="margin-top:30px;">
+                《全民阅读促进条例》规定，以下哪项不是条例强调的重点内容？
+            </div>
+
+            <div class="options">
+                <button class="option-btn" onclick="checkAnswer3b(this, false, 'A')">
+                    <span>A.</span> 重点扶助农村地区、革命老区、民族地区、边疆地区
+                </button>
+                <button class="option-btn" onclick="checkAnswer3b(this, false, 'B')">
+                    <span>B.</span> 强化对未成年人、残疾人、老年人等的阅读保障
+                </button>
+                <button class="option-btn" onclick="checkAnswer3b(this, true, 'C')">
+                    <span>C.</span> 强制要求每个学生每天阅读3小时以上
+                </button>
+                <button class="option-btn" onclick="checkAnswer3b(this, false, 'D')">
+                    <span>D.</span> 构建全民覆盖、普惠高效的全民阅读促进体系
+                </button>
+            </div>
+
+            <div class="feedback" id="feedback3-2">
+                <strong>🎉 正确！</strong><br>
+                条例强调的是<span style="color:#e74c3c; font-weight:bold;">保障和促进作用</span>，而非强制规定阅读时长！<br><br>
+                条例共6章45条，主要内容包括构建全民覆盖、普惠高效的阅读促进体系，重点扶助农村和特殊群体，推动"阅读+"融合创新等。
+            </div>
+
+            <button class="next-btn" id="next3" onclick="showResult()">查看成绩 🏆</button>
+        </div>
+
+        <!-- 结果页 -->
+        <div class="game-card" id="result-screen">
+            <div class="celebration" id="celebration">
+                <div class="trophy">🏆</div>
+                <h2 style="color: #667eea; margin-bottom: 20px;">恭喜完成探险！</h2>
+                <p style="font-size: 1.3em; margin-bottom: 20px;">
+                    你的最终得分：<span id="final-score" style="color: #e74c3c; font-size: 1.5em; font-weight: bold;">0</span> / 100
+                </p>
+                <div id="result-message" style="font-size: 1.1em; color: #555; line-height: 1.8;"></div>
+                <button class="start-btn" style="margin-top: 30px;" onclick="location.reload()">🔄 再玩一次</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let score = 0;
+        let currentLevel = 0;
+        let selectedLeft = null;
+        let matches = 0;
+
+        function startGame() {
+            document.getElementById('start-screen').classList.remove('active');
+            document.getElementById('progress-card').classList.add('active');
+            document.getElementById('level1').classList.add('active');
+            updateProgress(33);
+        }
+
+        function updateProgress(percent) {
+            document.getElementById('progress-fill').style.width = percent + '%';
+        }
+
+        function checkAnswer(btn, isCorrect, option) {
+            const buttons = btn.parentElement.querySelectorAll('.option-btn');
+            buttons.forEach(b => b.classList.add('disabled'));
+            
+            if (isCorrect) {
+                btn.classList.add('correct');
+                score += 20;  // 修改：25 → 20
+                document.getElementById('score').textContent = score;
+                document.getElementById('feedback1').classList.add('show', 'correct');
+            } else {
+                btn.classList.add('wrong');
+                buttons.forEach(b => {
+                    if (b.onclick.toString().includes('true')) {
+                        b.classList.add('correct');
+                    }
+                });
+                document.getElementById('feedback1').classList.add('show', 'wrong');
+                document.getElementById('feedback1').innerHTML = 
+                    '<strong>❌ 答错了！</strong><br>正确答案是B。英国当时使用儒略历（旧历），比格里高利历（新历）慢了10天，所以莎士比亚实际去世日期换算成今天是5月3日。';
+            }
+            
+            document.getElementById('next1').classList.add('show');
+        }
+
+        function selectLeft(item) {
+            if (item.classList.contains('matched')) return;
+            
+            document.querySelectorAll('#left-column .match-item').forEach(i => {
+                if (!i.classList.contains('matched')) i.classList.remove('selected');
+            });
+            item.classList.add('selected');
+            selectedLeft = item;
+        }
+
+        function selectRight(item) {
+            if (!selectedLeft || item.classList.contains('matched')) return;
+            
+            const leftId = selectedLeft.getAttribute('data-id');
+            const rightMatch = item.getAttribute('data-match');
+            
+            if (leftId === rightMatch) {
+                selectedLeft.classList.add('matched');
+                item.classList.add('matched');
+                matches++;
+                score += 10;  // 修改：15 → 10（3个共30分）
+                document.getElementById('score').textContent = score;
+                
+                if (matches === 3) {
+                    document.getElementById('match-feedback').innerHTML = 
+                        '<strong>🎉 全部连线正确！</strong><br>塞万提斯-《堂吉诃德》、莎士比亚-《哈姆雷特》、汤显祖-《牡丹亭》';
+                    document.getElementById('match-feedback').classList.add('show', 'correct');
+                }
+            } else {
+                item.style.animation = 'shake 0.5s';
+                setTimeout(() => item.style.animation = '', 500);
+            }
+            
+            selectedLeft.classList.remove('selected');
+            selectedLeft = null;
+        }
+
+        function checkAnswer2(btn, isCorrect, option) {
+            const buttons = btn.parentElement.querySelectorAll('.option-btn');
+            buttons.forEach(b => b.classList.add('disabled'));
+            
+            if (isCorrect) {
+                btn.classList.add('correct');
+                score += 20;  // 修改：25 → 20
+                document.getElementById('score').textContent = score;
+                document.getElementById('feedback2').classList.add('show', 'correct');
+            } else {
+                btn.classList.add('wrong');
+                buttons.forEach(b => {
+                    if (b.onclick.toString().includes('true')) {
+                        b.classList.add('correct');
+                    }
+                });
+                document.getElementById('feedback2').classList.add('show', 'wrong');
+                document.getElementById('feedback2').innerHTML = 
+                    '<strong>❌ 答错了！</strong><br>正确答案是B。汤显祖于1616年7月29日（农历）去世，与另外两位文豪同年但不同月。';
+            }
+            
+            document.getElementById('next2').classList.add('show');
+        }
+
+        function goToLevel2() {
+            document.getElementById('level1').classList.remove('active');
+            document.getElementById('level2').classList.add('active');
+            document.getElementById('step1').classList.remove('active');
+            document.getElementById('step1').classList.add('completed');
+            document.getElementById('step2').classList.add('active');
+            updateProgress(66);
+        }
+
+        function checkAnswer3(btn, isCorrect, option) {
+            const buttons = btn.parentElement.querySelectorAll('.option-btn');
+            buttons.forEach(b => b.classList.add('disabled'));
+            
+            if (isCorrect) {
+                btn.classList.add('correct');
+                score += 15;  // 保持15不变
+                document.getElementById('score').textContent = score;
+                document.getElementById('feedback3-1').classList.add('show', 'correct');
+            } else {
+                btn.classList.add('wrong');
+                buttons.forEach(b => {
+                    if (b.onclick.toString().includes('true')) {
+                        b.classList.add('correct');
+                    }
+                });
+                document.getElementById('feedback3-1').classList.add('show', 'wrong');
+                document.getElementById('feedback3-1').innerHTML = 
+                    '<strong>❌ 答错了！</strong><br>正确答案是B。条例规定每年4月第四周为全民阅读活动周。';
+            }
+        }
+
+        function checkAnswer3b(btn, isCorrect, option) {
+            const buttons = btn.parentElement.querySelectorAll('.option-btn');
+            buttons.forEach(b => b.classList.add('disabled'));
+            
+            if (isCorrect) {
+                btn.classList.add('correct');
+                score += 15;  // 修改：20 → 15
+                document.getElementById('score').textContent = score;
+                document.getElementById('feedback3-2').classList.add('show', 'correct');
+            } else {
+                btn.classList.add('wrong');
+                buttons.forEach(b => {
+                    if (b.onclick.toString().includes('true')) {
+                        b.classList.add('correct');
+                    }
+                });
+                document.getElementById('feedback3-2').classList.add('show', 'wrong');
+                document.getElementById('feedback3-2').innerHTML = 
+                    '<strong>❌ 答错了！</strong><br>正确答案是C。条例强调的是保障和促进，而非强制规定阅读时长。';
+            }
+            
+            document.getElementById('next3').classList.add('show');
+        }
+
+        function goToLevel3() {
+            document.getElementById('level2').classList.remove('active');
+            document.getElementById('level3').classList.add('active');
+            document.getElementById('step2').classList.remove('active');
+            document.getElementById('step2').classList.add('completed');
+            document.getElementById('step3').classList.add('active');
+            updateProgress(100);
+        }
+
+        function showResult() {
+            document.getElementById('level3').classList.remove('active');
+            document.getElementById('progress-card').classList.remove('active');
+            document.getElementById('result-screen').classList.add('active');
+            document.getElementById('celebration').classList.add('show');
+            document.getElementById('final-score').textContent = score;
+            
+            let message = '';
+            if (score >= 90) {
+                message = '🌟 <strong>阅读大师！</strong><br>你对世界读书日的来历、历法差异和全民阅读法规了如指掌！<br>你是真正的知识探险家！';
+            } else if (score >= 70) {
+                message = '👍 <strong>阅读达人！</strong><br>你掌握了大部分知识，继续加油！';
+            } else if (score >= 50) {
+                message = '📖 <strong>阅读新手！</strong><br>你已经了解了不少，再复习一下就能成为专家！';
+            } else {
+                message = '💪 <strong>继续加油！</strong><br>知识需要积累，再玩一次巩固一下吧！';
+            }
+            
+            document.getElementById('result-message').innerHTML = message;
+        }
+
+        // 添加摇晃动画
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-10px); }
+                75% { transform: translateX(10px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
